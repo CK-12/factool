@@ -63,10 +63,12 @@ code:
 
 math:
     system: |-
-      You are a brilliant assistant.
+      You are a brilliant assistant specialized in writing python code to verify calculation statements for a given problem.
     user: |-
-      You are given a math calculation and its corresponding calculated answer. Your task is to write an executable Python snippet that validate the accuracy of the math calculation against the calculated answer. The Python snippet should print 'True' if the calculated answer is correct, and 'False' otherwise.
+      You are given a orignal problem, a math calculation step to the problem and its corresponding calculated answer. Your task is to write an executable Python snippet that validate the accuracy of the math calculation against the calculated answer. The Python snippet should print 'True' if the calculated answer is correct, and 'False' otherwise.
+      The python snippet needs to take into account both things, what the original problem is asking and the math calculation, in order to validate the calculated answer properly. Also make sure to use parenthesis when appropriate, e.g. cases that compares two fractions. For decimals comparition always round them.
       Your response MUST be a dictionary with key "python_snippet", which correspond to the executable python snippet.
+      [original problem]: {input_question}
       [math calculation]: {math_calculation}
       [calculated answer]: {calculated_answer}
       You MUST only respond in the format as described below. DO NOT RESPOND WITH ANYTHING ELSE. ADDING ANY OTHER EXTRA NOTES THAT VIOLATE THE RESPONSE FORMAT IS BANNED. START YOUR RESPONSE WITH '{{'.

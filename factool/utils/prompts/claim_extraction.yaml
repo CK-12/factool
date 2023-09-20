@@ -26,28 +26,52 @@ knowledge_qa:
 
 math:
   system: |-
-    You are a helpful assistant.
+    You are a helpful assistant specialized in breaking procedural questions into smaller calculation steps and validates them with python code. Please note that:
+    ```python
+    (2 * 4 / 3 * 4) != ((2 * 4) / (3 * 4))
+    ```
+    So take into account the Python Operators Precedence Rule to properly create the python code.  
   user: |-
-    You are given a math problem and a potential solution to the math problem. Your task is to identify all the math calculations that involve arithmetic operations between known real numbers within the potential solution. However, do not include math calculations that contains variable(s).
-    Your response MUST be a list of dictionaries. Each dictionary should contains 2 key - "math_calculation" and "calculated_answer", which correspond to the extracted math calculation, and the calculated answer within the potential solution.
+    You are given a math problem and a potential solution to the math problem. Your task is to identify all the math calculations that involve arithmetic operations between known real numbers within the potential solution. However, do not include math calculations that contains symbolic variable(s).
+    Your response MUST be a list of dictionaries. Each dictionary should contains 3 keys - "math_calculation", "calculated_answer" and "python_snippet", which correspond to the extracted math calculation, the extracted calculated answer within the potential solution and the python code to verify that respectively.
+    The python snippet needs to take into account both things, what the original problem is asking and the math calculation, in order to validate the calculated answer properly. Also make sure to use parenthesis when appropriate, e.g. cases that compares two fractions. For decimals comparition always round them.
     You MUST only respond in the format as described below. DO NOT RESPOND WITH ANYTHING ELSE. ADDING ANY OTHER EXTRA NOTES THAT VIOLATE THE RESPONSE FORMAT IS BANNED. START YOUR RESPONSE WITH '['.
     [response format]: 
     [
       {{
         "math_calculation": "Extracted math calculation involving real numbers within the potential solution. Do not include math calculataions that contains variable(s). Do not include units such as $, %, etc.",
-        "calculated_answer": "The calculated answer for the extracted math calculation."
+        "calculated_answer": "The calculated extracted answer for the math calculation.",
+        "python_snippet": "The python snippet to verify the calculatied answer given the calculation."
       }},
       ...
     ]
 
-    Here are two examples:
+    Here are three examples:
     [math problem]: What is the area of a circle with a diameter of 10 inches?
     [potential solution]: To find the area, we first calculate the radius as the diameter divided by 2, so the radius is 10/2 = 5 inches. Then, we use the formula for the area of a circle, which is πr^2. Plugging in the radius we get, Area = π*5^2 = 78.54 square inches.
-    [response]: [{{"math_calculation": "10 / 2", "calculated_answer": "5"}}, {{"math_calculation": "π * 5^2", "calculated_answer": "78.54"}}]
+    [response]: [{{"math_calculation": "10 / 2", "calculated_answer": "5", "python_snippet": "print(round((10 / 2), 2) == round(5, 2))"}}, {{"math_calculation": "π * 5^2", "calculated_answer": "78.54", "python_snippet": "import math\nresult = math.pi * math.pow(5, 2)\nprint(round(result, 2) == 78.54)"}}]
 
-    [math problem]: A store originally sold a shirt for $45. They are offering a 20% discount on the shirt. How much will the shirt cost now?
-    [potential solution]: The discount on the shirt is calculated as 20% of $45, which is 0.20 * 45 = $9. The new price of the shirt after the discount is $45 - $9 = $36.
-    [response]: [{{"math_calculation": "0.20 * 45", "calculated_answer": "9"}}, {{"math_calculation": "45 - 9","calculated_answer": "36"}}]
+    [math problem]: Julia made fancy red costume decorations for each of the dancers in her year-end dance performance. She used 1/4 of a meter of ribbon for each decoration, which she got by cutting 3/4 of a meter of ribbon into equal pieces. How many decorations did Julia make?
+    [potential solution]: To find out how many decorations Julia made, we need to divide the total length of the ribbon by the length of ribbon used for each decoration.
+
+    The total length of the ribbon is &lt;math&gt;3/4&lt;/math&gt; of a meter and the length of ribbon used for each decoration is &lt;math&gt;1/4&lt;/math&gt; of a meter.
+
+    So, the number of decorations is &lt;math&gt;\frac{{3/4}}{{1/4}}&lt;/math&gt;.
+
+    This simplifies to &lt;math&gt;3&lt;/math&gt;.
+
+    So, Julia made &lt;math&gt;\boldsymbol{{3}}&lt;/math&gt; decorations.
+    [response]: [{{"math_calculation": "(3/4) / (1/4)","calculated_answer": "3", "python_snippet": "print(round(((3/4) / (1/4)), 2) == round(3, 2))"}}]
+
+    [math problem]: In a deck of 52 playing cards, what is the probability of drawing a king and then a queen, without replacing the cards?
+    [potential solution]: The probability of drawing a king from a deck of 52 cards is &lt;math&gt;\frac {{4}} {{52}}&lt;/math&gt; or &lt;math&gt;\frac {{1}} {{13}}&lt;/math&gt; because there are 4 kings in a deck.
+
+    After drawing a king, there are now 51 cards left. The probability of drawing a queen from these remaining cards is &lt;math&gt;\frac {{4}} {{51}}&lt;/math&gt; because there are 4 queens in a deck.
+
+    The probability of both events happening is the product of their individual probabilities. So, the probability of drawing a king and then a queen, without replacing the cards, is &lt;math&gt;\frac {{1}} {{13}} \times \frac {{4}} {{51}}&lt;/math&gt;.
+
+    &lt;math&gt;\boldsymbol {{P = \frac {{4}} {{663}}}} &lt;/math&gt;
+    [response]: [{{"math_calculation":  "4 / 52", "calculated_answer": "1 / 13", "python_snippet": "print(round((4 / 52), 2) == round(1 / 3, 2))"}}, {{"math_calculation": "4 / 51", "calculated_answer": "4 / 51", "python_snippet": "print(round((4 / 51), 2) == round(4 / 51, 2))"}},  {{"math_calculation": "(1 / 13) * (4 / 51)", "calculated_answer": "4 / 663", , "python_snippet": "print(round((1 / 13) * (4 / 51), 2) == round(4 / 663, 2))"}}]
 
     Now complete the following:
     [math problem]: {input_question}

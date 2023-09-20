@@ -4,6 +4,7 @@ import os
 from typing import List, Dict
 import yaml
 import pdb
+from tenacity import retry, wait_exponential, stop_after_attempt
 
 from factool.math.tool import python_executor
 from factool.utils.base.pipeline import pipeline
@@ -40,30 +41,39 @@ class math_pipeline(pipeline):
         ]
         return await self.chat.async_run(messages_list, List)
     
-    async def _query_generation(self, claims):
-        messages_list = [
-            [
-                {"role": "system", "content": self.query_prompt['system']},
-                {"role": "user", "content": self.query_prompt['user'].format(math_calculation=claim['math_calculation'], calculated_answer=claim['calculated_answer'])},
+    async def _query_generation(self, sample, claims):
+        if claims:
+            messages_list = [
+                [
+                    {"role": "system", "content": self.query_prompt['system']},
+                    {"role": "user", "content": self.query_prompt['user'].format(
+                        input_question=sample['prompt'],
+                        math_calculation=claim['math_calculation'], 
+                        calculated_answer=claim['calculated_answer']
+                    )},
+                ]
+                for claim in claims
             ]
-            for claim in claims
-        ]
-        return await self.chat.async_run(messages_list, Dict)
-    
+            return await self.chat.async_run(messages_list, Dict)
+
+    @retry(stop=stop_after_attempt(10), reraise=True,
+       wait=wait_exponential(multiplier=1, min=0.3, max=0.9))
     async def run_with_tool_live(self, samples):
         claims_in_responses = await self._claim_extraction(samples)
         queries_in_responses = []
         exec_results_in_responses = []
         verifications_in_responses = []
-        for claims_in_response in claims_in_responses:
-            queries = await self._query_generation(claims_in_response)
+        for i, claims_in_response in enumerate(claims_in_responses):
+            sample = samples[i]
+            queries = [{"python_snippet": c.get("python_snippet", "")} for c in claims_in_response] #await self._query_generation(sample, claims_in_response)
             queries_in_responses.append(queries)
             exec_results = []
-            for query in queries:
-                try:
-                    exec_results.append(self.tool.run(query['python_snippet']))
-                except:
-                    exec_results.append('None')
+            if queries:
+                for query in queries:
+                    try:
+                        exec_results.append(self.tool.run(query['python_snippet']))
+                    except:
+                        exec_results.append('None')
             exec_results_in_responses.append(exec_results)
             verifications = self._verification(exec_results)
             verifications_in_responses.append(verifications)
@@ -97,13 +107,16 @@ class math_pipeline(pipeline):
 
             for j, (claims_in_response, queries_in_response, exec_results_in_response, verifications_in_response) in enumerate(zip(claims_in_responses, queries_in_responses, exec_results_in_response, verifications_in_responses)):
                 index = batch_start + j
-
+                response_level_factuality = all([verification if verification != None else True for verification in verifications_in_response])
+                factuality_score = sum([verification for verification in verifications_in_response if verification])/len(verifications_in_response) \
+                    if verifications_in_response and len(verifications_in_response)>0 else 0
                 self.sample_list[index].update({
                     'claims': claims_in_response,
                     'queries': queries_in_response,
                     'execution_results': exec_results_in_response,
                     'claim_level_factuality': verifications_in_response,
-                    'response_level_factuality': all([verification if verification != None else True for verification in verifications_in_response])
+                    'response_level_factuality': response_level_factuality,
+                    'factuality_score': factuality_score
                 })
 
         return self.sample_list
