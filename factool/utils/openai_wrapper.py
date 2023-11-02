@@ -71,23 +71,30 @@ class OpenAIChat():
     
     def _boolean_fix(self, output):
         return output.replace("true", "True").replace("false", "False")
+    
+    def _literal_eval(self, input):
+        try:
+            output_eval = ast.literal_eval(input)
+            return output_eval
+        except:
+            return None
 
     def _type_check(self, output, expected_type):
         try:
-            output_eval = ast.literal_eval(output)
+            output_eval = self._literal_eval(output)
             if not isinstance(output_eval, expected_type):
                 return None
             return output_eval
         except:
             if(expected_type == List):
                 valid_output = self.extract_list_from_string(output)
-                output_eval = ast.literal_eval(valid_output)
+                output_eval = self._literal_eval(valid_output)
                 if not isinstance(output_eval, expected_type):
                     return None
                 return output_eval
             elif(expected_type == dict):
                 valid_output = self.extract_dict_from_string(output)
-                output_eval = ast.literal_eval(valid_output)
+                output_eval = self._literal_eval(valid_output)
                 if not isinstance(output_eval, expected_type):
                     return None
                 return output_eval
@@ -194,20 +201,3 @@ class OpenAIEmbed():
         tasks = [self.create_embedding(text, retry=retry) for text in batch]
         return await asyncio.gather(*tasks)
 
-if __name__ == "__main__":
-    chat = OpenAIChat(model_name='llama-2-7b-chat-hf')
-
-    predictions = asyncio.run(chat.async_run(
-        messages_list=[
-            [{"role": "user", "content": "show either 'ab' or '['a']'. Do not do anything else."}],
-        ] * 20,
-        expected_type=List,
-    ))
-
-    print(predictions)
-    # Usage
-    # embed = OpenAIEmbed()
-    # batch = ["string1", "string2", "string3", "string4", "string5", "string6", "string7", "string8", "string9", "string10"]  # Your batch of strings
-    # embeddings = asyncio.run(embed.process_batch(batch, retry=3))
-    # for embedding in embeddings:
-    #     print(embedding["data"][0]["embedding"])

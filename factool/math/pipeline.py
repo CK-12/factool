@@ -10,8 +10,8 @@ from factool.math.tool import python_executor
 from factool.utils.base.pipeline import pipeline
 
 class math_pipeline(pipeline):
-    def __init__(self, foundation_model):
-        super().__init__('math', foundation_model)
+    def __init__(self, generation_params):
+        super().__init__('math', generation_params)
 
         self.tool = python_executor()
 
@@ -65,9 +65,13 @@ class math_pipeline(pipeline):
         verifications_in_responses = []
         for i, claims_in_response in enumerate(claims_in_responses):
             sample = samples[i]
-            queries = [{"python_snippet": c.get("python_snippet", "")} for c in claims_in_response] #await self._query_generation(sample, claims_in_response)
-            queries_in_responses.append(queries)
             exec_results = []
+            queries = []
+
+            if claims_in_response:
+             queries = [{"python_snippet": c.get("python_snippet", "")} for c in claims_in_response] #await self._query_generation(sample, claims_in_response)
+
+            queries_in_responses.append(queries)
             if queries:
                 for query in queries:
                     try:
@@ -109,7 +113,7 @@ class math_pipeline(pipeline):
                 index = batch_start + j
                 response_level_factuality = all([verification if verification != None else True for verification in verifications_in_response])
                 factuality_score = sum([verification for verification in verifications_in_response if verification])/len(verifications_in_response) \
-                    if verifications_in_response and len(verifications_in_response)>0 else 0
+                    if verifications_in_response and len(verifications_in_response)>0 else 1
                 self.sample_list[index].update({
                     'claims': claims_in_response,
                     'queries': queries_in_response,
