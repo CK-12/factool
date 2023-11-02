@@ -3,7 +3,6 @@ import math
 import os
 from typing import List, Dict
 import yaml
-import pdb
 from tenacity import retry, wait_exponential, stop_after_attempt
 
 from factool.math.tool import python_executor
@@ -96,14 +95,12 @@ class math_pipeline(pipeline):
         classification_results = self._verification(exec_results)
         return queries, exec_results, classification_results
     
-    async def run_with_tool_api_call(self, prompts, responses):
-        batch_size = 5
+    async def run_with_tool_api_call(self, prompts, responses, batch_size=5):
         num_batches = math.ceil(len(prompts) / batch_size)
 
         self.sample_list = [{"prompt": prompt, "response": response, "category": 'math'} for prompt, response in zip(prompts, responses)]
 
         for i in range(num_batches):
-            print(i)
             batch_start = i * batch_size
             batch_end = min((i + 1) * batch_size, len(responses))
 
@@ -136,8 +133,6 @@ class math_pipeline(pipeline):
         num_batches = math.ceil(len(rerun_elements) / batch_size) # 5
 
         for i in range(num_batches):
-            print("test1")
-            print(i)
             batch_start = i * batch_size
             batch_end = min((i + 1) * batch_size, len(rerun_elements))
             batch = rerun_elements[batch_start:batch_end]
@@ -183,7 +178,6 @@ class math_pipeline(pipeline):
         num_batches = math.ceil(len(rerun_elements) / batch_size)
 
         for i in range(num_batches):
-            print(i)
             batch_start = i * batch_size
             batch_end = min((i + 1) * batch_size, len(rerun_elements))
             batch = rerun_elements[batch_start:batch_end]

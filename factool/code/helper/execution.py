@@ -6,17 +6,9 @@ import ctypes
 
 from collections import defaultdict
 from concurrent.futures import as_completed, ProcessPoolExecutor
-import logging
 
 from factool.code.helper._execution import test_case_against_solution
-
-logging.basicConfig(
-    format="SystemLog: [%(asctime)s][%(name)s][%(levelname)s] - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.INFO,
-)
-
-logger = logging.getLogger(__name__)
+from factool.utils.log_config import logger
 
 def evaluate_test_cases_multi_solution(prompt, testcases_input,
                                        multi_solutions, timeout=0.1):
