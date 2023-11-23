@@ -3,7 +3,6 @@ import math
 import os
 from typing import List, Dict
 import yaml
-from tenacity import retry, wait_exponential, stop_after_attempt
 
 from factool.math.tool import python_executor
 from factool.utils.base.pipeline import pipeline
@@ -55,8 +54,6 @@ class math_pipeline(pipeline):
             ]
             return await self.chat.async_run(messages_list, Dict)
 
-    @retry(stop=stop_after_attempt(10), reraise=True,
-       wait=wait_exponential(multiplier=1, min=0.3, max=0.9))
     async def run_with_tool_live(self, samples):
         claims_in_responses = await self._claim_extraction(samples)
         queries_in_responses = []

@@ -124,8 +124,8 @@ class OpenAIChat():
                     )
                     return response
                 except openai.error.RateLimitError:
-                    print('Rate limit error, waiting for 40 second...')
-                    await asyncio.sleep(40)
+                    print('Rate limit error, waiting for 60 second...')
+                    await asyncio.sleep(60)
                 except openai.error.APIError:
                     print('API error, waiting for 1 second...')
                     await asyncio.sleep(1)
